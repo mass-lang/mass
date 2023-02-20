@@ -368,8 +368,8 @@ const inferVarTypes = (list: List): List => {
   const mut = varFnId.value.includes("define-mut");
   const global = varFnId.value.includes("global");
   const initializer = list.at(2);
-  const inferredType = getExprReturnType(initializer);
   const annotatedInitializer = inferExprTypes(initializer?.clone());
+  const inferredType = getExprReturnType(annotatedInitializer);
   // Get identifier from a potentially untyped definition
   const def = list.at(1)!;
   const identifier = isList(def)

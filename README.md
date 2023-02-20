@@ -38,8 +38,6 @@ though. So feel free to play around.
 
 **Features:**
 
-- [x] Fn syntax
-- [x] Primitive `macro`
 - [x] Infix support
 - [x] Standard function notation
 - [x] Parenthetical elision
@@ -53,32 +51,26 @@ though. So feel free to play around.
 - [ ] Tail recursion
 - [ ] Generics
 - [ ] Modules 🚧
-- [ ] Std library 🚧
 - [ ] Test framework
 - [ ] Type checking
 - [x] Type inference
 - [ ] Safety semantics (unsafe, ownership etc)
-- [ ] Match statements
 - [ ] Loops
 - [ ] Algebraic data types
 - [ ] Optionals
 - [ ] Algebraic effects
 - [ ] Reference Types (Boxes? / Mutable Borrows? / GC?)
 - [ ] Traits
-- [ ] Syntax Objects and Syntax Traits / Interfaces
-- [ ] Hygienic Macros
-- [ ] String literals 🚧
-- [ ] Struct literals 🚧
+- [ ] Syntax Traits / Interfaces
+- [x] Hygienic Macros
 - [ ] Tuple literals 🚧
 - [ ] Array literals 🚧
-- [ ] Named arguments
+- [x] Named arguments
 - [ ] Rest parameters
 - [ ] WASM module function exports
 - [ ] Access control (public / private etc)
 - [x] Comments
 - [ ] First class functions
-- [ ] Scoping / (Namespacing?)
-- [ ] Syntax Highlighting
 - [ ] Language Sever Protocol
 - [ ] Website
 - [ ] Debugger

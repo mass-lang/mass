@@ -11,32 +11,64 @@ import { ModuleInfo } from "../lib/module-info.mjs";
 
 export const memoryManagement = (list: List, info: ModuleInfo): List => {
   if (!info.isRoot) return list;
-  return insertMemInstructions(list);
+  const fns = getMemFns(list);
+  return insertMemInstructions({ list, fns });
 };
 
-const insertMemInstructions = (list: List): List =>
-  list.reduce((expr) => {
+const insertMemInstructions = (opts: InsertOpts): List =>
+  opts.list.reduce((expr) => {
     if (!isList(expr)) return expr;
 
-    if (!expr.calls("define-function")) return insertMemInstructions(expr);
+    if (expr.calls("define-function")) {
+      return addMemInstructionsToFunctionDef({ ...opts, list: expr });
+    }
 
-    const fnId = expr.at(1) as Identifier;
-    const fn = fnId.getTypeOf() as FnType;
+    if (expr.calls("typed-block")) {
+      return addMemInstructionsToBlock({ ...opts, list: expr });
+    }
 
-    if (isPrimitiveType(fn.returns)) return insertMemInstructions(expr);
-    return addMemInstructionsToFunctionDef(expr, fn.returns!.size);
+    return insertMemInstructions({ ...opts, list: expr });
   });
 
-const addMemInstructionsToFunctionDef = (
-  list: List,
-  allocationSize: number
-): List => {
+const addMemInstructionsToBlock = (opts: InsertOpts): List => {
+  const { list, fns } = opts;
+  const { alloc, setReturn, copy } = fns;
+
+  const type = list.at(1)?.getTypeOf();
+  if (!type) throw new Error("Block type not found");
+  if (isPrimitiveType(type)) return insertMemInstructions(opts);
+
+  const body = insertMemInstructions({
+    ...opts,
+    list: list.slice(2),
+  });
+
+  const returnAddr = Identifier.from("*__block_return_alloc_address");
+  returnAddr.setTypeOf(CDT_ADDRESS_TYPE);
+  return new List({
+    from: list,
+    value: [
+      "typed-block",
+      CDT_ADDRESS_TYPE,
+      ["define", returnAddr, [alloc, new Int({ value: type.size })]],
+      [setReturn, [copy, body, returnAddr]],
+    ],
+  });
+};
+
+const addMemInstructionsToFunctionDef = (opts: InsertOpts): List => {
+  const { list, fns } = opts;
+  const { alloc, setReturn, copy } = fns;
+
+  const fnId = list.at(1) as Identifier;
+  const fn = fnId.getTypeOf() as FnType;
+
+  if (isPrimitiveType(fn.returns)) return insertMemInstructions(opts);
+  const allocationSize = fn.returns!.size;
   const body = list.at(4)!;
   const returnAddr = Identifier.from("*__return_alloc_address");
   returnAddr.setTypeOf(CDT_ADDRESS_TYPE);
-  const alloc = getFnId(list, "alloc");
-  const setReturn = getFnId(list, "set-return");
-  const copy = getFnId(list, "copy");
+
   list.set(
     4,
     new List({
@@ -57,4 +89,22 @@ const getFnId = (parent: List, name: string): Identifier => {
   const fnId = Identifier.from(name);
   fnId.setTypeOf(fnIdFn);
   return fnId;
+};
+
+const getMemFns = (parent: List): MemFns => {
+  const alloc = getFnId(parent, "alloc");
+  const setReturn = getFnId(parent, "set-return");
+  const copy = getFnId(parent, "copy");
+  return { alloc, setReturn, copy };
+};
+
+type InsertOpts = {
+  fns: MemFns;
+  list: List;
+};
+
+type MemFns = {
+  alloc: Identifier;
+  setReturn: Identifier;
+  copy: Identifier;
 };
